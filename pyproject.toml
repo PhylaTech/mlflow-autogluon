@@ -48,6 +48,7 @@ dev = [
 
 [project.urls]
 Homepage = "https://github.com/PhylaTech/mlflow-autogluon"
+Documentation = "https://phylatech.com/mlflow-autogluon/"
 Issues = "https://github.com/PhylaTech/mlflow-autogluon/issues"
 
 [tool.setuptools.packages.find]
