@@ -11,9 +11,12 @@ https://mlflow.org/docs/latest/ml/community-model-flavors/:
   ``mlflow.pyfunc.load_model`` and ``mlflow models serve``.
 """
 
+from __future__ import annotations
+
 import inspect
 import logging
 import os
+from typing import TYPE_CHECKING, Any
 
 import yaml
 from mlflow import pyfunc
@@ -44,6 +47,10 @@ from mlflow.utils.model_utils import (
     _validate_and_prepare_target_save_path,
 )
 
+if TYPE_CHECKING:
+    from autogluon.tabular import TabularPredictor
+    from mlflow.models.model import ModelInfo
+
 FLAVOR_NAME = "autogluon"
 
 _MODEL_DATA_SUBPATH = "ag_model"
@@ -52,18 +59,18 @@ _MODEL_TYPE_TABULAR = "tabular"
 _logger = logging.getLogger(__name__)
 
 
-def _get_autogluon_version():
+def _get_autogluon_version() -> str:
     import autogluon.tabular
 
     return autogluon.tabular.__version__
 
 
-def get_default_pip_requirements():
+def get_default_pip_requirements() -> list[str]:
     """Return the default pip requirements for models produced by this flavor."""
     return [f"autogluon.tabular=={_get_autogluon_version()}"]
 
 
-def get_default_conda_env():
+def get_default_conda_env() -> dict[str, Any]:
     """Return the default conda environment for models produced by this flavor."""
     return _mlflow_conda_env(additional_pip_deps=get_default_pip_requirements())
 
@@ -104,17 +111,17 @@ def _validate_ag_model(ag_model):
 
 
 def save_model(
-    ag_model,
-    path,
-    conda_env=None,
-    code_paths=None,
-    mlflow_model=None,
-    signature=None,
-    input_example=None,
-    pip_requirements=None,
-    extra_pip_requirements=None,
-    metadata=None,
-):
+    ag_model: TabularPredictor,
+    path: str,
+    conda_env: dict[str, Any] | str | None = None,
+    code_paths: list[str] | None = None,
+    mlflow_model: Model | None = None,
+    signature: ModelSignature | None = None,
+    input_example: Any | None = None,
+    pip_requirements: list[str] | str | None = None,
+    extra_pip_requirements: list[str] | str | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> None:
     """Save a fitted AutoGluon predictor to a local path in MLflow model format.
 
     Args:
@@ -180,20 +187,20 @@ def save_model(
 
 
 def log_model(
-    ag_model,
-    artifact_path=None,
-    conda_env=None,
-    code_paths=None,
-    registered_model_name=None,
-    signature=None,
-    input_example=None,
-    await_registration_for=DEFAULT_AWAIT_MAX_SLEEP_SECONDS,
-    pip_requirements=None,
-    extra_pip_requirements=None,
-    metadata=None,
-    name=None,
-    **kwargs,
-):
+    ag_model: TabularPredictor,
+    artifact_path: str | None = None,
+    conda_env: dict[str, Any] | str | None = None,
+    code_paths: list[str] | None = None,
+    registered_model_name: str | None = None,
+    signature: ModelSignature | None = None,
+    input_example: Any | None = None,
+    await_registration_for: int = DEFAULT_AWAIT_MAX_SLEEP_SECONDS,
+    pip_requirements: list[str] | str | None = None,
+    extra_pip_requirements: list[str] | str | None = None,
+    metadata: dict[str, Any] | None = None,
+    name: str | None = None,
+    **kwargs: Any,
+) -> ModelInfo:
     """Log a fitted AutoGluon predictor as an MLflow artifact for the current run.
 
     Args:
@@ -208,11 +215,12 @@ def log_model(
         A :class:`mlflow.models.model.ModelInfo` describing the logged model.
     """
     log_params = inspect.signature(Model.log).parameters
-    log_kwargs = {}
     if name is not None and "name" in log_params:
-        log_kwargs["name"] = name
+        # MLflow 3.x: artifact_path is still a required positional, pass None
+        # alongside name to opt into the new naming convention.
+        log_kwargs = {"artifact_path": None, "name": name}
     else:
-        log_kwargs["artifact_path"] = artifact_path or name or "model"
+        log_kwargs = {"artifact_path": artifact_path or name or "model"}
 
     return Model.log(
         flavor=inspect.getmodule(save_model),
@@ -242,7 +250,7 @@ def _load_model_from_data_path(ag_model_path, model_type=_MODEL_TYPE_TABULAR):
     )
 
 
-def load_model(model_uri, dst_path=None):
+def load_model(model_uri: str, dst_path: str | None = None) -> TabularPredictor:
     """Load a native AutoGluon predictor from an MLflow model URI.
 
     Args:
@@ -285,7 +293,9 @@ class _AutoGluonModelWrapper:
         params = params or {}
         predict_method = params.get("predict_method", "predict")
         if predict_method == "predict":
-            return self.ag_model.predict(dataframe)
+            # ndarray so REST serving returns plain scalars, matching the
+            # behavior of built-in flavors such as mlflow.sklearn.
+            return self.ag_model.predict(dataframe).to_numpy()
         if predict_method == "predict_proba":
             return self.ag_model.predict_proba(dataframe)
         raise MlflowException(

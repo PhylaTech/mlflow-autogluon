@@ -1,6 +1,13 @@
 # mlflow-autogluon
 
+[![CI](https://github.com/PhylaTech/mlflow-autogluon/actions/workflows/ci.yml/badge.svg)](https://github.com/PhylaTech/mlflow-autogluon/actions/workflows/ci.yml)
+[![Docs](https://github.com/PhylaTech/mlflow-autogluon/actions/workflows/docs.yml/badge.svg)](https://phylatech.github.io/mlflow-autogluon/)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://github.com/PhylaTech/mlflow-autogluon)
+
 MLflow community model flavor and autologging for [AutoGluon](https://auto.gluon.ai) predictors.
+
+**Documentation: [phylatech.github.io/mlflow-autogluon](https://phylatech.github.io/mlflow-autogluon/)**
 
 AutoGluon has no built-in MLflow flavor, and the MLflow maintainers have asked for this
 integration to live as a [community flavor](https://mlflow.org/docs/latest/ml/community-model-flavors/)
@@ -85,9 +92,12 @@ mlflow models serve -m "models:/<name>/<version>" -p 5001
 
 ## Compatibility
 
-- Python >= 3.9
-- MLflow >= 2.15 (including MLflow 3.x)
+- Python >= 3.9 (CI: 3.10, 3.11, 3.12)
+- MLflow >= 2.15 (CI: latest 3.x and the 2.x line)
 - AutoGluon >= 1.1 (`TabularPredictor`; other predictor types are on the roadmap)
+
+See [examples/autolog_quickstart.py](examples/autolog_quickstart.py) for a complete
+runnable walkthrough on a real dataset.
 
 ## Roadmap
 

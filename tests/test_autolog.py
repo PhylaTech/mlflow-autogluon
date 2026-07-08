@@ -63,10 +63,11 @@ def test_autolog_respects_log_models_false(train_data, tracking_uri, tmp_path):
         _fit_predictor(train_data, tmp_path / "predictor")
         runs = mlflow.search_runs(output_format="list")
         assert len(runs) == 1
+        with pytest.raises(Exception, match="model|artifact"):
+            mlflow_autogluon.load_model(f"runs:/{runs[0].info.run_id}/model")
         artifact_paths = [
             f.path for f in MlflowClient().list_artifacts(runs[0].info.run_id)
         ]
-        assert "model" not in artifact_paths
         assert "leaderboard.csv" in artifact_paths
     finally:
         mlflow_autogluon.autolog(disable=True)

@@ -9,6 +9,8 @@ Because this is a community flavor, ``mlflow.autolog()`` does not enable it;
 call ``mlflow_autogluon.autolog()`` explicitly before fitting.
 """
 
+from __future__ import annotations
+
 import inspect
 import json
 import logging
@@ -16,6 +18,7 @@ import numbers
 import os
 import tempfile
 import time
+from typing import Any
 
 import mlflow
 from mlflow.utils.autologging_utils import (
@@ -34,17 +37,18 @@ _MAX_PARAM_LENGTH = 500
 _NON_PARAM_FIT_ARGS = {"self", "train_data", "tuning_data", "test_data", "kwargs"}
 
 
+@autologging_integration(FLAVOR_NAME)
 def autolog(
-    log_models=True,
-    log_leaderboard=True,
-    log_fit_summary=False,
-    registered_model_name=None,
-    extra_tags=None,
-    disable=False,
-    exclusive=False,
-    disable_for_unsupported_versions=False,
-    silent=False,
-):  # pylint: disable=unused-argument
+    log_models: bool = True,
+    log_leaderboard: bool = True,
+    log_fit_summary: bool = False,
+    registered_model_name: str | None = None,
+    extra_tags: dict[str, Any] | None = None,
+    disable: bool = False,
+    exclusive: bool = False,
+    disable_for_unsupported_versions: bool = False,
+    silent: bool = False,
+) -> None:  # pylint: disable=unused-argument
     """Enable automatic logging for AutoGluon ``TabularPredictor.fit`` calls.
 
     After calling this function, every ``fit`` call logs to the active MLflow
@@ -79,10 +83,6 @@ def autolog(
     from autogluon.tabular import TabularPredictor
 
     safe_patch(FLAVOR_NAME, TabularPredictor, "fit", _patched_fit, manage_run=True)
-
-
-# Applied after the definition so the decorator sees the full signature.
-autolog = autologging_integration(FLAVOR_NAME)(autolog)
 
 
 def _patched_fit(original, self, *args, **kwargs):
@@ -188,9 +188,11 @@ def _log_posttraining(self, fit_duration):
         registered_model_name = get_autologging_config(
             FLAVOR_NAME, "registered_model_name", None
         )
+        # name= resolves to the MLflow 3 convention when available and falls
+        # back to artifact_path on MLflow 2.x, avoiding deprecation warnings.
         log_model(
             ag_model=self,
-            artifact_path="model",
+            name="model",
             registered_model_name=registered_model_name,
         )
 

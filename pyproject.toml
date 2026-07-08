@@ -37,8 +37,12 @@ test = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
 ]
+docs = [
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.25",
+]
 dev = [
-    "mlflow-autogluon[tabular,test]",
+    "mlflow-autogluon[tabular,test,docs]",
     "ruff>=0.4",
 ]
 
