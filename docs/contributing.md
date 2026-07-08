@@ -42,6 +42,18 @@ Docs are MkDocs Material, deployed to GitHub Pages on every push to `main`:
 mamba run -n mlflow-autogluon mkdocs serve
 ```
 
+## Commit messages and releases
+
+Commits to `main` follow [Conventional Commits](https://www.conventionalcommits.org/)
+(`feat:`, `fix:`, `docs:`, `chore:`, with `!` or a `BREAKING CHANGE:` footer for
+breaking changes). [release-please](https://github.com/googleapis/release-please)
+watches `main`, maintains a running release PR with the version bump and
+`CHANGELOG.md`, and merging that PR tags the release. Publishing the GitHub
+release triggers the `Publish to PyPI` workflow, which uploads the package via
+PyPI trusted publishing. Versions live in `pyproject.toml` and
+`mlflow_autogluon/__init__.py`; both are managed by release-please, never bump
+them by hand.
+
 ## Roadmap
 
 - Model signature inference during autologging
