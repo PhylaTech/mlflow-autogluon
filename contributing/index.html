@@ -515,6 +515,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#commit-messages-and-releases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commit messages and releases
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#roadmap" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -593,6 +604,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#commit-messages-and-releases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commit messages and releases
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#roadmap" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -650,6 +672,16 @@ to <code>mlflow&lt;3</code> to guard the oldest supported line.</p>
 <p>Docs are MkDocs Material, deployed to GitHub Pages on every push to <code>main</code>:</p>
 <div class="highlight"><pre><span></span><code>mamba<span class="w"> </span>run<span class="w"> </span>-n<span class="w"> </span>mlflow-autogluon<span class="w"> </span>mkdocs<span class="w"> </span>serve
 </code></pre></div>
+<h2 id="commit-messages-and-releases">Commit messages and releases</h2>
+<p>Commits to <code>main</code> follow <a href="https://www.conventionalcommits.org/">Conventional Commits</a>
+(<code>feat:</code>, <code>fix:</code>, <code>docs:</code>, <code>chore:</code>, with <code>!</code> or a <code>BREAKING CHANGE:</code> footer for
+breaking changes). <a href="https://github.com/googleapis/release-please">release-please</a>
+watches <code>main</code>, maintains a running release PR with the version bump and
+<code>CHANGELOG.md</code>, and merging that PR tags the release. Publishing the GitHub
+release triggers the <code>Publish to PyPI</code> workflow, which uploads the package via
+PyPI trusted publishing. Versions live in <code>pyproject.toml</code> and
+<code>mlflow_autogluon/__init__.py</code>; both are managed by release-please, never bump
+them by hand.</p>
 <h2 id="roadmap">Roadmap</h2>
 <ul>
 <li>Model signature inference during autologging</li>
