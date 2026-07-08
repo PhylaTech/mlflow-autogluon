@@ -11,6 +11,7 @@ call ``mlflow_autogluon.autolog()`` explicitly before fitting.
 
 from __future__ import annotations
 
+import importlib
 import inspect
 import json
 import logging
@@ -27,7 +28,12 @@ from mlflow.utils.autologging_utils import (
     safe_patch,
 )
 
-from mlflow_autogluon.flavor import FLAVOR_NAME, log_model
+from mlflow_autogluon.flavor import (
+    _PREDICTOR_REGISTRY,
+    FLAVOR_NAME,
+    _model_type_of,
+    log_model,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -80,9 +86,20 @@ def autolog(
         silent: If ``True``, suppress all MLflow event logs and warnings from
             autologging.
     """
-    from autogluon.tabular import TabularPredictor
-
-    safe_patch(FLAVOR_NAME, TabularPredictor, "fit", _patched_fit, manage_run=True)
+    patched_any = False
+    for module_name, class_name in _PREDICTOR_REGISTRY.values():
+        try:
+            module = importlib.import_module(module_name)
+        except ImportError:
+            continue
+        predictor_class = getattr(module, class_name)
+        safe_patch(FLAVOR_NAME, predictor_class, "fit", _patched_fit, manage_run=True)
+        patched_any = True
+    if not patched_any:
+        raise ImportError(
+            "No AutoGluon predictor packages found. Install at least one of: "
+            + ", ".join(m for m, _ in _PREDICTOR_REGISTRY.values())
+        )
 
 
 def _patched_fit(original, self, *args, **kwargs):
@@ -128,16 +145,19 @@ def _extract_fit_params(original, self, args, kwargs):
     }
 
 
-def _log_pretraining(self, original, args, kwargs):
-    import autogluon.tabular
+# predictor attributes worth capturing as params, when present
+_PREDICTOR_ATTR_PARAMS = ("label", "target", "problem_type", "prediction_length")
 
-    params = {"label": self.label}
+
+def _log_pretraining(self, original, args, kwargs):
+    params = {}
+    for attr in _PREDICTOR_ATTR_PARAMS:
+        value = getattr(self, attr, None)
+        if value is not None:
+            params[attr] = value
     eval_metric = getattr(self, "eval_metric", None)
     if eval_metric is not None:
         params["eval_metric"] = getattr(eval_metric, "name", str(eval_metric))
-    problem_type = getattr(self, "problem_type", None)
-    if problem_type is not None:
-        params["problem_type"] = problem_type
 
     for name, value in _extract_fit_params(original, self, args, kwargs).items():
         if value is not None:
@@ -150,9 +170,11 @@ def _log_pretraining(self, original, args, kwargs):
 
     mlflow.log_params({k: _stringify_param(v) for k, v in params.items()})
 
+    model_type = _model_type_of(self)
+    module_name, _ = _PREDICTOR_REGISTRY[model_type]
     tags = {
         "estimator_name": type(self).__name__,
-        "autogluon_version": autogluon.tabular.__version__,
+        "autogluon_version": importlib.import_module(module_name).__version__,
     }
     extra_tags = get_autologging_config(FLAVOR_NAME, "extra_tags", None)
     if extra_tags:
@@ -178,10 +200,14 @@ def _log_posttraining(self, fit_duration):
     if best_model is not None:
         mlflow.set_tag("best_model", best_model)
 
-    if get_autologging_config(FLAVOR_NAME, "log_leaderboard", True):
+    if get_autologging_config(FLAVOR_NAME, "log_leaderboard", True) and hasattr(
+        self, "leaderboard"
+    ):
         _try_log(_log_leaderboard, self, best_model)
 
-    if get_autologging_config(FLAVOR_NAME, "log_fit_summary", False):
+    if get_autologging_config(FLAVOR_NAME, "log_fit_summary", False) and hasattr(
+        self, "fit_summary"
+    ):
         _try_log(_log_fit_summary, self)
 
     if get_autologging_config(FLAVOR_NAME, "log_models", True):
@@ -203,10 +229,20 @@ def _log_leaderboard(self, best_model):
     metrics = {}
     for _, row in leaderboard.iterrows():
         model_name = row.get("model")
-        for column in ("score_val", "fit_time", "pred_time_val"):
-            value = row.get(column)
+        # column sets differ per predictor type (e.g. fit_time_marginal for
+        # timeseries), so log every numeric leaderboard column
+        for column, value in row.items():
+            if column == "model":
+                continue
             if isinstance(value, numbers.Number) and value == value:  # skip NaN
                 metrics[f"{column}_{model_name}"] = float(value)
+
+    if best_model is None and not leaderboard.empty and "score_val" in leaderboard:
+        # TimeSeriesPredictor has no model_best attribute; the leaderboard is
+        # sorted by validation score, best first
+        best_model = leaderboard.iloc[0]["model"]
+        mlflow.set_tag("best_model", best_model)
+
     if best_model is not None:
         best_rows = leaderboard[leaderboard["model"] == best_model]
         if not best_rows.empty:

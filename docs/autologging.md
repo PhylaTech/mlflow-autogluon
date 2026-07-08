@@ -1,9 +1,10 @@
 # Autologging
 
-`mlflow_autogluon.autolog()` patches `TabularPredictor.fit` using MLflow's own
-autologging machinery (`safe_patch`), so it behaves like the built-in integrations:
-runs are created automatically when none is active, user-created runs are reused,
-and a logging failure never breaks your training call.
+`mlflow_autogluon.autolog()` patches the `fit` method of every installed AutoGluon
+predictor type (`TabularPredictor`, `TimeSeriesPredictor`, `MultiModalPredictor`)
+using MLflow's own autologging machinery (`safe_patch`), so it behaves like the
+built-in integrations: runs are created automatically when none is active,
+user-created runs are reused, and a logging failure never breaks your training call.
 
 ## Options
 
@@ -25,7 +26,8 @@ mlflow_autogluon.autolog(
 
 All non-data arguments of the `fit` call, plus predictor configuration:
 
-- `label`, `problem_type`, `eval_metric` from the predictor
+- `label`, `problem_type`, `eval_metric` from the predictor (`target` and
+  `prediction_length` for timeseries predictors)
 - `presets`, `time_limit`, `hyperparameters`, `num_bag_folds`, `num_stack_levels`,
   and any other keyword arguments passed to `fit`
 - `train_rows` and `train_columns` when the training data has a shape
@@ -37,8 +39,11 @@ Dict and list values (such as `hyperparameters`) are JSON-encoded and truncated 
 
 - `fit_time_seconds`: wall-clock duration of the `fit` call
 - `best_model_score_val`: validation score of the best model
-- `score_val_<model>`, `fit_time_<model>`, `pred_time_val_<model>` for every row of
-  the leaderboard
+- every numeric leaderboard column per model, e.g. `score_val_<model>`,
+  `fit_time_<model>`, `pred_time_val_<model>` (column sets vary by predictor type)
+
+`MultiModalPredictor` has no leaderboard, so leaderboard metrics and the CSV
+artifact are skipped for it.
 
 ### Tags
 

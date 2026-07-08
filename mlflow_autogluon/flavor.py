@@ -13,9 +13,11 @@ https://mlflow.org/docs/latest/ml/community-model-flavors/:
 
 from __future__ import annotations
 
+import importlib
 import inspect
 import logging
 import os
+import shutil
 from typing import TYPE_CHECKING, Any
 
 import yaml
@@ -48,31 +50,74 @@ from mlflow.utils.model_utils import (
 )
 
 if TYPE_CHECKING:
-    from autogluon.tabular import TabularPredictor
     from mlflow.models.model import ModelInfo
 
 FLAVOR_NAME = "autogluon"
 
 _MODEL_DATA_SUBPATH = "ag_model"
 _MODEL_TYPE_TABULAR = "tabular"
+_MODEL_TYPE_TIMESERIES = "timeseries"
+_MODEL_TYPE_MULTIMODAL = "multimodal"
+
+# model_type -> (module holding the predictor / pip distribution, class name)
+_PREDICTOR_REGISTRY = {
+    _MODEL_TYPE_TABULAR: ("autogluon.tabular", "TabularPredictor"),
+    _MODEL_TYPE_TIMESERIES: ("autogluon.timeseries", "TimeSeriesPredictor"),
+    _MODEL_TYPE_MULTIMODAL: ("autogluon.multimodal", "MultiModalPredictor"),
+}
+_CLASS_NAME_TO_MODEL_TYPE = {
+    class_name: model_type
+    for model_type, (_, class_name) in _PREDICTOR_REGISTRY.items()
+}
 
 _logger = logging.getLogger(__name__)
 
 
-def _get_autogluon_version() -> str:
-    import autogluon.tabular
+def _registry_entry(model_type: str) -> tuple[str, str]:
+    try:
+        return _PREDICTOR_REGISTRY[model_type]
+    except KeyError:
+        raise MlflowException(
+            f"Unsupported autogluon model_type: {model_type!r}. "
+            f"Expected one of {sorted(_PREDICTOR_REGISTRY)}.",
+            INVALID_PARAMETER_VALUE,
+        ) from None
 
-    return autogluon.tabular.__version__
+
+def _model_type_of(ag_model: Any) -> str:
+    cls_name = type(ag_model).__name__
+    model_type = _CLASS_NAME_TO_MODEL_TYPE.get(cls_name)
+    if model_type is None:
+        supported = ", ".join(cls for _, cls in _PREDICTOR_REGISTRY.values())
+        raise MlflowException(
+            f"The autogluon flavor supports {supported}, got {cls_name}.",
+            INVALID_PARAMETER_VALUE,
+        )
+    return model_type
 
 
-def get_default_pip_requirements() -> list[str]:
-    """Return the default pip requirements for models produced by this flavor."""
-    return [f"autogluon.tabular=={_get_autogluon_version()}"]
+def _get_autogluon_version(model_type: str = _MODEL_TYPE_TABULAR) -> str:
+    module_name, _ = _registry_entry(model_type)
+    return importlib.import_module(module_name).__version__
 
 
-def get_default_conda_env() -> dict[str, Any]:
-    """Return the default conda environment for models produced by this flavor."""
-    return _mlflow_conda_env(additional_pip_deps=get_default_pip_requirements())
+def get_default_pip_requirements(model_type: str = _MODEL_TYPE_TABULAR) -> list[str]:
+    """Return the default pip requirements for models produced by this flavor.
+
+    Args:
+        model_type: One of ``"tabular"``, ``"timeseries"``, or ``"multimodal"``.
+    """
+    module_name, _ = _registry_entry(model_type)
+    return [f"{module_name}=={_get_autogluon_version(model_type)}"]
+
+
+def get_default_conda_env(model_type: str = _MODEL_TYPE_TABULAR) -> dict[str, Any]:
+    """Return the default conda environment for models produced by this flavor.
+
+    Args:
+        model_type: One of ``"tabular"``, ``"timeseries"``, or ``"multimodal"``.
+    """
+    return _mlflow_conda_env(additional_pip_deps=get_default_pip_requirements(model_type))
 
 
 def _default_params_schema():
@@ -97,21 +142,34 @@ def _with_default_params_schema(signature):
 
 
 def _validate_ag_model(ag_model):
-    cls_name = type(ag_model).__name__
-    if cls_name != "TabularPredictor":
-        raise MlflowException(
-            f"The autogluon flavor currently supports TabularPredictor only, got {cls_name}. "
-            "Support for other predictor types is planned.",
-            INVALID_PARAMETER_VALUE,
-        )
+    model_type = _model_type_of(ag_model)
     if not getattr(ag_model, "is_fit", True):
         raise MlflowException(
             "The predictor must be fit before it can be saved.", INVALID_PARAMETER_VALUE
         )
+    return model_type
+
+
+def _persist_predictor(ag_model, model_type, dst_path):
+    """Copy the fitted predictor's artifacts into the MLflow model directory."""
+    if model_type == _MODEL_TYPE_MULTIMODAL:
+        # standalone=True bundles downloaded pretrained weights so the model
+        # can be loaded without network access
+        try:
+            ag_model.save(dst_path, standalone=True)
+        except TypeError:
+            ag_model.save(dst_path)
+    elif hasattr(ag_model, "clone"):
+        ag_model.clone(path=dst_path)
+    else:
+        # TimeSeriesPredictor persists to its own path during fit; save()
+        # refreshes it, then the directory is copied wholesale
+        ag_model.save()
+        shutil.copytree(ag_model.path, dst_path)
 
 
 def save_model(
-    ag_model: TabularPredictor,
+    ag_model: Any,
     path: str,
     conda_env: dict[str, Any] | str | None = None,
     code_paths: list[str] | None = None,
@@ -125,7 +183,8 @@ def save_model(
     """Save a fitted AutoGluon predictor to a local path in MLflow model format.
 
     Args:
-        ag_model: Fitted ``autogluon.tabular.TabularPredictor`` instance.
+        ag_model: Fitted ``TabularPredictor``, ``TimeSeriesPredictor``, or
+            ``MultiModalPredictor`` instance.
         path: Local filesystem destination for the MLflow model.
         conda_env: Conda environment dict or path to a conda YAML file.
         code_paths: Local code paths to package with the model.
@@ -136,7 +195,7 @@ def save_model(
         extra_pip_requirements: Additional pip requirements.
         metadata: Custom metadata dict stored in the MLmodel file.
     """
-    _validate_ag_model(ag_model)
+    model_type = _validate_ag_model(ag_model)
     _validate_env_arguments(conda_env, pip_requirements, extra_pip_requirements)
 
     path = os.path.abspath(path)
@@ -152,7 +211,7 @@ def save_model(
         mlflow_model.metadata = metadata
 
     model_data_path = os.path.join(path, _MODEL_DATA_SUBPATH)
-    ag_model.clone(path=model_data_path)
+    _persist_predictor(ag_model, model_type, model_data_path)
 
     pyfunc.add_to_model(
         mlflow_model,
@@ -163,15 +222,17 @@ def save_model(
     )
     mlflow_model.add_flavor(
         FLAVOR_NAME,
-        autogluon_version=_get_autogluon_version(),
-        model_type=_MODEL_TYPE_TABULAR,
+        autogluon_version=_get_autogluon_version(model_type),
+        model_type=model_type,
         data=_MODEL_DATA_SUBPATH,
         code=code_dir_subpath,
     )
     mlflow_model.save(os.path.join(path, MLMODEL_FILE_NAME))
 
     if conda_env is None:
-        default_reqs = get_default_pip_requirements() if pip_requirements is None else None
+        default_reqs = (
+            get_default_pip_requirements(model_type) if pip_requirements is None else None
+        )
         conda_env, pip_requirements, pip_constraints = _process_pip_requirements(
             default_reqs, pip_requirements, extra_pip_requirements
         )
@@ -187,7 +248,7 @@ def save_model(
 
 
 def log_model(
-    ag_model: TabularPredictor,
+    ag_model: Any,
     artifact_path: str | None = None,
     conda_env: dict[str, Any] | str | None = None,
     code_paths: list[str] | None = None,
@@ -204,7 +265,8 @@ def log_model(
     """Log a fitted AutoGluon predictor as an MLflow artifact for the current run.
 
     Args:
-        ag_model: Fitted ``autogluon.tabular.TabularPredictor`` instance.
+        ag_model: Fitted ``TabularPredictor``, ``TimeSeriesPredictor``, or
+            ``MultiModalPredictor`` instance.
         artifact_path: Run-relative artifact path (MLflow 2.x convention).
         name: Model name (MLflow 3.x convention). Falls back to ``artifact_path``
             on MLflow versions that do not support it.
@@ -240,17 +302,19 @@ def log_model(
 
 
 def _load_model_from_data_path(ag_model_path, model_type=_MODEL_TYPE_TABULAR):
-    if model_type == _MODEL_TYPE_TABULAR:
-        from autogluon.tabular import TabularPredictor
+    module_name, class_name = _registry_entry(model_type)
+    try:
+        module = importlib.import_module(module_name)
+    except ImportError as e:
+        raise MlflowException(
+            f"Loading this model requires {module_name}, which is not installed. "
+            f"Install it with: pip install {module_name}"
+        ) from e
+    predictor_class = getattr(module, class_name)
+    return predictor_class.load(ag_model_path)
 
-        return TabularPredictor.load(ag_model_path)
-    raise MlflowException(
-        f"Unsupported autogluon model_type in flavor configuration: {model_type}",
-        INVALID_PARAMETER_VALUE,
-    )
 
-
-def load_model(model_uri: str, dst_path: str | None = None) -> TabularPredictor:
+def load_model(model_uri: str, dst_path: str | None = None) -> Any:
     """Load a native AutoGluon predictor from an MLflow model URI.
 
     Args:
@@ -259,7 +323,8 @@ def load_model(model_uri: str, dst_path: str | None = None) -> TabularPredictor:
         dst_path: Optional local destination for downloaded artifacts.
 
     Returns:
-        The restored AutoGluon predictor (``TabularPredictor``).
+        The restored AutoGluon predictor (``TabularPredictor``,
+        ``TimeSeriesPredictor``, or ``MultiModalPredictor``).
     """
     local_model_path = _download_artifact_from_uri(artifact_uri=model_uri, output_path=dst_path)
     flavor_conf = _get_flavor_configuration(
@@ -272,11 +337,20 @@ def load_model(model_uri: str, dst_path: str | None = None) -> TabularPredictor:
     )
 
 
+def _to_timeseries_dataframe(data):
+    from autogluon.timeseries import TimeSeriesDataFrame
+
+    if isinstance(data, TimeSeriesDataFrame):
+        return data
+    return TimeSeriesDataFrame.from_data_frame(data)
+
+
 class _AutoGluonModelWrapper:
     """Pyfunc-compatible wrapper around an AutoGluon predictor."""
 
-    def __init__(self, ag_model):
+    def __init__(self, ag_model, model_type=_MODEL_TYPE_TABULAR):
         self.ag_model = ag_model
+        self.model_type = model_type
 
     def get_raw_model(self):
         return self.ag_model
@@ -285,17 +359,34 @@ class _AutoGluonModelWrapper:
         """Run inference on a pandas DataFrame.
 
         Args:
-            dataframe: Input feature frame.
+            dataframe: Input feature frame. For timeseries models, a long
+                format frame with ``item_id`` and ``timestamp`` columns.
             params: Optional dict of inference parameters. Supported key:
                 ``predict_method`` with value ``"predict"`` (default) or
-                ``"predict_proba"``.
+                ``"predict_proba"`` (tabular and multimodal classifiers).
         """
         params = params or {}
         predict_method = params.get("predict_method", "predict")
+
+        if self.model_type == _MODEL_TYPE_TIMESERIES:
+            if predict_method != "predict":
+                raise MlflowException(
+                    f"Timeseries models only support predict_method='predict', "
+                    f"got {predict_method!r}.",
+                    INVALID_PARAMETER_VALUE,
+                )
+            forecast = self.ag_model.predict(_to_timeseries_dataframe(dataframe))
+            # flatten the (item_id, timestamp) index into columns so the
+            # forecast serializes cleanly over REST
+            return forecast.reset_index()
+
         if predict_method == "predict":
+            predictions = self.ag_model.predict(dataframe)
             # ndarray so REST serving returns plain scalars, matching the
             # behavior of built-in flavors such as mlflow.sklearn.
-            return self.ag_model.predict(dataframe).to_numpy()
+            return (
+                predictions.to_numpy() if hasattr(predictions, "to_numpy") else predictions
+            )
         if predict_method == "predict_proba":
             return self.ag_model.predict_proba(dataframe)
         raise MlflowException(
@@ -316,4 +407,6 @@ def _load_pyfunc(path):
         # ``path`` already points at the predictor directory (older layouts).
         ag_model_path = path
         model_type = _MODEL_TYPE_TABULAR
-    return _AutoGluonModelWrapper(_load_model_from_data_path(ag_model_path, model_type))
+    return _AutoGluonModelWrapper(
+        _load_model_from_data_path(ag_model_path, model_type), model_type
+    )

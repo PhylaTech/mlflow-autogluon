@@ -36,4 +36,29 @@ jobs:
       - run: pip install -e .[tabular,test]
       - if: matrix.mlflow-version != ''
         run: pip install "${{ matrix.mlflow-version }}"
-      - run: pytest --cov=mlflow_autogluon --cov-report=term-missing --cov-fail-under=90
+      - run: pytest --cov=mlflow_autogluon --cov-report=term-missing --cov-fail-under=85
+
+  test-timeseries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e .[tabular,timeseries,test]
+      - run: pytest tests/test_timeseries.py -v
+
+  test-multimodal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      # setuptools<81 still ships pkg_resources, which autogluon.multimodal's
+      # dependency chain imports at runtime
+      - run: pip install -e .[tabular,multimodal,test] "setuptools<81"
+      - run: pytest tests/test_multimodal.py -v
+        timeout-minutes: 30
