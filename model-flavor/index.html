@@ -648,9 +648,40 @@
 
 
 <h1 id="model-flavor">Model flavor</h1>
-<p>The <code>autogluon</code> flavor stores the predictor via <code>TabularPredictor.clone()</code> inside the
-MLflow model directory, together with pinned requirements and a <code>python_function</code>
-flavor for generic inference.</p>
+<p>The <code>autogluon</code> flavor stores the predictor inside the MLflow model directory,
+together with pinned requirements and a <code>python_function</code> flavor for generic
+inference. All three AutoGluon predictor types are supported, each persisted with
+the mechanism native to it:</p>
+<table>
+<thead>
+<tr>
+<th>Predictor</th>
+<th>Persistence</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TabularPredictor</code></td>
+<td><code>clone()</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>TimeSeriesPredictor</code></td>
+<td><code>save()</code> + directory copy</td>
+<td></td>
+</tr>
+<tr>
+<td><code>MultiModalPredictor</code></td>
+<td><code>save(standalone=True)</code></td>
+<td>bundles pretrained weights for offline loading</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>MLmodel</code> flavor configuration records a <code>model_type</code> (<code>tabular</code>, <code>timeseries</code>,
+or <code>multimodal</code>) and the exact AutoGluon package version, and <code>requirements.txt</code>
+pins the matching distribution (<code>autogluon.tabular</code>, <code>autogluon.timeseries</code>, or
+<code>autogluon.multimodal</code>).</p>
 <h2 id="logging-a-model-manually">Logging a model manually</h2>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">mlflow</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">mlflow_autogluon</span>
@@ -691,11 +722,26 @@ serving environments reproduce the training environment.</p>
 <li><code>pyfunc_model.predict(df)</code> returns a numpy array of predictions, matching the
   behavior of built-in flavors such as <code>mlflow.sklearn</code>.</li>
 <li><code>pyfunc_model.predict(df, params={"predict_method": "predict_proba"})</code> returns the
-  class-probability DataFrame for classifiers.</li>
+  class-probability DataFrame for tabular and multimodal classifiers.</li>
+<li>Timeseries models accept a long-format DataFrame with <code>item_id</code> and <code>timestamp</code>
+  columns (or a native <code>TimeSeriesDataFrame</code>) and return the forecast as a plain
+  DataFrame with <code>item_id</code>, <code>timestamp</code>, <code>mean</code>, and quantile columns.</li>
 </ul>
 <p>The <code>predict_method</code> inference param is declared in the model signature at save time,
 so it also works through REST serving. Signatures you pass explicitly are preserved;
 the params schema is added only when missing.</p>
+<div class="admonition warning">
+<p class="admonition-title">MultiModalPredictor on Apple Silicon</p>
+<p>AutoGluon 1.5's multimodal GPU banner probes every torch-visible device
+through NVML, which crashes on Apple MPS (<code>pynvml.NVMLError_LibraryNotFound</code>).
+This is an upstream AutoGluon issue, not specific to this package. Workarounds:
+force CPU via <code>hyperparameters={"env.accelerator": "cpu", "env.num_gpus": 0}</code>
+together with <code>pip uninstall nvidia-ml-py3 pynvml</code>, or neutralize the banner:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">autogluon.multimodal.learners</span><span class="w"> </span><span class="kn">import</span> <span class="n">base</span>
+
+<span class="n">base</span><span class="o">.</span><span class="n">BaseLearner</span><span class="o">.</span><span class="n">log_gpu_info</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="k">lambda</span> <span class="n">num_gpus</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+</div>
 <h2 id="signatures-and-input-examples">Signatures and input examples</h2>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">mlflow.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">infer_signature</span>
 

@@ -748,10 +748,11 @@
 
 
 <h1 id="autologging">Autologging</h1>
-<p><code>mlflow_autogluon.autolog()</code> patches <code>TabularPredictor.fit</code> using MLflow's own
-autologging machinery (<code>safe_patch</code>), so it behaves like the built-in integrations:
-runs are created automatically when none is active, user-created runs are reused,
-and a logging failure never breaks your training call.</p>
+<p><code>mlflow_autogluon.autolog()</code> patches the <code>fit</code> method of every installed AutoGluon
+predictor type (<code>TabularPredictor</code>, <code>TimeSeriesPredictor</code>, <code>MultiModalPredictor</code>)
+using MLflow's own autologging machinery (<code>safe_patch</code>), so it behaves like the
+built-in integrations: runs are created automatically when none is active,
+user-created runs are reused, and a logging failure never breaks your training call.</p>
 <h2 id="options">Options</h2>
 <div class="highlight"><pre><span></span><code><span class="n">mlflow_autogluon</span><span class="o">.</span><span class="n">autolog</span><span class="p">(</span>
     <span class="n">log_models</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>             <span class="c1"># log the fitted predictor as an MLflow model</span>
@@ -767,7 +768,8 @@ and a logging failure never breaks your training call.</p>
 <h3 id="parameters">Parameters</h3>
 <p>All non-data arguments of the <code>fit</code> call, plus predictor configuration:</p>
 <ul>
-<li><code>label</code>, <code>problem_type</code>, <code>eval_metric</code> from the predictor</li>
+<li><code>label</code>, <code>problem_type</code>, <code>eval_metric</code> from the predictor (<code>target</code> and
+  <code>prediction_length</code> for timeseries predictors)</li>
 <li><code>presets</code>, <code>time_limit</code>, <code>hyperparameters</code>, <code>num_bag_folds</code>, <code>num_stack_levels</code>,
   and any other keyword arguments passed to <code>fit</code></li>
 <li><code>train_rows</code> and <code>train_columns</code> when the training data has a shape</li>
@@ -778,9 +780,11 @@ and a logging failure never breaks your training call.</p>
 <ul>
 <li><code>fit_time_seconds</code>: wall-clock duration of the <code>fit</code> call</li>
 <li><code>best_model_score_val</code>: validation score of the best model</li>
-<li><code>score_val_&lt;model&gt;</code>, <code>fit_time_&lt;model&gt;</code>, <code>pred_time_val_&lt;model&gt;</code> for every row of
-  the leaderboard</li>
+<li>every numeric leaderboard column per model, e.g. <code>score_val_&lt;model&gt;</code>,
+  <code>fit_time_&lt;model&gt;</code>, <code>pred_time_val_&lt;model&gt;</code> (column sets vary by predictor type)</li>
 </ul>
+<p><code>MultiModalPredictor</code> has no leaderboard, so leaderboard metrics and the CSV
+artifact are skipped for it.</p>
 <h3 id="tags">Tags</h3>
 <ul>
 <li><code>estimator_name</code> (<code>TabularPredictor</code>)</li>

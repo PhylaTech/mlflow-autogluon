@@ -656,11 +656,14 @@ This package provides that integration.</p>
 <h2 id="features">Features</h2>
 <ul>
 <li><strong>Model flavor</strong>: <code>save_model</code>, <code>log_model</code>, and <code>load_model</code> for
-  <code>autogluon.tabular.TabularPredictor</code>, with full round-trip fidelity.</li>
+  <code>TabularPredictor</code>, <code>TimeSeriesPredictor</code>, and <code>MultiModalPredictor</code>, with full
+  round-trip fidelity.</li>
 <li><strong>PyFunc support</strong>: logged models load with <code>mlflow.pyfunc.load_model</code> and serve with
-  <code>mlflow models serve</code>, including <code>predict_proba</code> via inference params.</li>
+  <code>mlflow models serve</code>, including <code>predict_proba</code> via inference params and long-format
+  DataFrame forecasting for timeseries models.</li>
 <li><strong>Autologging</strong>: one call to <code>mlflow_autogluon.autolog()</code> records params, leaderboard
-  metrics, artifacts, and the fitted predictor for every <code>fit</code> call.</li>
+  metrics, artifacts, and the fitted predictor for every <code>fit</code> call, across all
+  installed predictor types.</li>
 </ul>
 <h2 id="installation">Installation</h2>
 <div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>mlflow-autogluon<span class="o">[</span>tabular<span class="o">]</span>
@@ -697,11 +700,16 @@ This package provides that integration.</p>
 </tr>
 <tr>
 <td>AutoGluon</td>
-<td>&gt;= 1.1 (<code>TabularPredictor</code>)</td>
+<td>&gt;= 1.1 (tabular, timeseries, multimodal)</td>
 <td>1.5.x</td>
 </tr>
 </tbody>
 </table>
+<p>Install the extra matching your predictor type:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>mlflow-autogluon<span class="o">[</span>tabular<span class="o">]</span><span class="w">      </span><span class="c1"># TabularPredictor</span>
+pip<span class="w"> </span>install<span class="w"> </span>mlflow-autogluon<span class="o">[</span>timeseries<span class="o">]</span><span class="w">   </span><span class="c1"># TimeSeriesPredictor</span>
+pip<span class="w"> </span>install<span class="w"> </span>mlflow-autogluon<span class="o">[</span>multimodal<span class="o">]</span><span class="w">   </span><span class="c1"># MultiModalPredictor</span>
+</code></pre></div>
 <h2 id="license">License</h2>
 <p>Apache License 2.0.</p>
 
