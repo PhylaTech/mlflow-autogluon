@@ -1,0 +1,33 @@
+name: Docs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: docs-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e .[docs]
+      - run: mkdocs build --strict
+      - uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: site
+          branch: gh-pages
+          clean: true
+          # PR previews live under pr-preview/ and are managed by the
+          # docs-preview workflow; do not wipe them on main deploys
+          clean-exclude: pr-preview/

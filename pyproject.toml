@@ -37,13 +37,18 @@ test = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
 ]
+docs = [
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.25",
+]
 dev = [
-    "mlflow-autogluon[tabular,test]",
+    "mlflow-autogluon[tabular,test,docs]",
     "ruff>=0.4",
 ]
 
 [project.urls]
 Homepage = "https://github.com/PhylaTech/mlflow-autogluon"
+Documentation = "https://phylatech.github.io/mlflow-autogluon/"
 Issues = "https://github.com/PhylaTech/mlflow-autogluon/issues"
 
 [tool.setuptools.packages.find]

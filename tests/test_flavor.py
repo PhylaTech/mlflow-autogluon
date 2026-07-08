@@ -65,9 +65,7 @@ def test_pyfunc_predict_and_predict_proba(fitted_predictor, test_data, tmp_path)
 
     predictions = pyfunc_model.predict(test_data)
     assert len(predictions) == len(test_data)
-    pd.testing.assert_series_equal(
-        pd.Series(predictions), pd.Series(fitted_predictor.predict(test_data))
-    )
+    assert list(predictions) == fitted_predictor.predict(test_data).tolist()
 
     proba = pyfunc_model.predict(test_data, params={"predict_method": "predict_proba"})
     expected_proba = fitted_predictor.predict_proba(test_data)
