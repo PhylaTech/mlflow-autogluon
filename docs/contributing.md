@@ -44,6 +44,5 @@ mamba run -n mlflow-autogluon mkdocs serve
 
 ## Roadmap
 
-- `TimeSeriesPredictor` and `MultiModalPredictor` support
 - Model signature inference during autologging
 - ClearML integration (tracked separately)

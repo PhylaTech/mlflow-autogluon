@@ -1,8 +1,20 @@
 # Model flavor
 
-The `autogluon` flavor stores the predictor via `TabularPredictor.clone()` inside the
-MLflow model directory, together with pinned requirements and a `python_function`
-flavor for generic inference.
+The `autogluon` flavor stores the predictor inside the MLflow model directory,
+together with pinned requirements and a `python_function` flavor for generic
+inference. All three AutoGluon predictor types are supported, each persisted with
+the mechanism native to it:
+
+| Predictor | Persistence | Notes |
+| --- | --- | --- |
+| `TabularPredictor` | `clone()` | |
+| `TimeSeriesPredictor` | `save()` + directory copy | |
+| `MultiModalPredictor` | `save(standalone=True)` | bundles pretrained weights for offline loading |
+
+The `MLmodel` flavor configuration records a `model_type` (`tabular`, `timeseries`,
+or `multimodal`) and the exact AutoGluon package version, and `requirements.txt`
+pins the matching distribution (`autogluon.tabular`, `autogluon.timeseries`, or
+`autogluon.multimodal`).
 
 ## Logging a model manually
 
@@ -60,11 +72,27 @@ pyfunc_model = mlflow.pyfunc.load_model("models:/my-model/1")
 - `pyfunc_model.predict(df)` returns a numpy array of predictions, matching the
   behavior of built-in flavors such as `mlflow.sklearn`.
 - `pyfunc_model.predict(df, params={"predict_method": "predict_proba"})` returns the
-  class-probability DataFrame for classifiers.
+  class-probability DataFrame for tabular and multimodal classifiers.
+- Timeseries models accept a long-format DataFrame with `item_id` and `timestamp`
+  columns (or a native `TimeSeriesDataFrame`) and return the forecast as a plain
+  DataFrame with `item_id`, `timestamp`, `mean`, and quantile columns.
 
 The `predict_method` inference param is declared in the model signature at save time,
 so it also works through REST serving. Signatures you pass explicitly are preserved;
 the params schema is added only when missing.
+
+!!! warning "MultiModalPredictor on Apple Silicon"
+    AutoGluon 1.5's multimodal GPU banner probes every torch-visible device
+    through NVML, which crashes on Apple MPS (`pynvml.NVMLError_LibraryNotFound`).
+    This is an upstream AutoGluon issue, not specific to this package. Workarounds:
+    force CPU via `hyperparameters={"env.accelerator": "cpu", "env.num_gpus": 0}`
+    together with `pip uninstall nvidia-ml-py3 pynvml`, or neutralize the banner:
+
+    ```python
+    from autogluon.multimodal.learners import base
+
+    base.BaseLearner.log_gpu_info = staticmethod(lambda num_gpus, config: None)
+    ```
 
 ## Signatures and input examples
 

@@ -16,11 +16,14 @@ integration to live as a [community flavor](https://mlflow.org/docs/latest/ml/co
 This package provides that integration:
 
 - **Model flavor**: `save_model`, `log_model`, and `load_model` for
-  `autogluon.tabular.TabularPredictor`, with full round-trip fidelity.
+  `TabularPredictor`, `TimeSeriesPredictor`, and `MultiModalPredictor`, with full
+  round-trip fidelity.
 - **PyFunc support**: logged models load with `mlflow.pyfunc.load_model` and serve with
-  `mlflow models serve`, including `predict_proba` via inference params.
+  `mlflow models serve`, including `predict_proba` via inference params and long-format
+  DataFrame forecasting for timeseries models.
 - **Autologging**: one call to `mlflow_autogluon.autolog()` records params, leaderboard
-  metrics, artifacts, and the fitted predictor for every `fit` call.
+  metrics, artifacts, and the fitted predictor for every `fit` call, across all
+  installed predictor types.
 
 ## Installation
 
@@ -94,14 +97,14 @@ mlflow models serve -m "models:/<name>/<version>" -p 5001
 
 - Python >= 3.9 (CI: 3.10, 3.11, 3.12)
 - MLflow >= 2.15 (CI: latest 3.x and the 2.x line)
-- AutoGluon >= 1.1 (`TabularPredictor`; other predictor types are on the roadmap)
+- AutoGluon >= 1.1: `TabularPredictor` (`[tabular]` extra), `TimeSeriesPredictor`
+  (`[timeseries]`), and `MultiModalPredictor` (`[multimodal]`)
 
 See [examples/autolog_quickstart.py](examples/autolog_quickstart.py) for a complete
 runnable walkthrough on a real dataset.
 
 ## Roadmap
 
-- `TimeSeriesPredictor` and `MultiModalPredictor` support
 - Model signature inference during autologging
 - ClearML integration (tracked separately)
 
