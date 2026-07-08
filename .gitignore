@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# Environments
+.venv/
+venv/
+
+# Tooling
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# MLflow / AutoGluon local outputs
+mlruns/
+mlartifacts/
+AutogluonModels/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store

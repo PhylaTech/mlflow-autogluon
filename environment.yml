@@ -1,0 +1,12 @@
+name: mlflow-autogluon
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - mlflow>=2.15
+      - autogluon.tabular>=1.1
+      - pytest>=7.0
+      - pytest-cov>=4.0
+      - ruff>=0.4
