@@ -1,13 +1,13 @@
 # mlflow-autogluon
 
 [![CI](https://github.com/PhylaTech/mlflow-autogluon/actions/workflows/ci.yml/badge.svg)](https://github.com/PhylaTech/mlflow-autogluon/actions/workflows/ci.yml)
-[![Docs](https://github.com/PhylaTech/mlflow-autogluon/actions/workflows/docs.yml/badge.svg)](https://phylatech.com/mlflow-autogluon/)
+[![Docs](https://github.com/PhylaTech/mlflow-autogluon/actions/workflows/docs.yml/badge.svg)](https://phylatech.github.io/mlflow-autogluon/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://github.com/PhylaTech/mlflow-autogluon)
 
 MLflow community model flavor and autologging for [AutoGluon](https://auto.gluon.ai) predictors.
 
-**Documentation: [phylatech.com/mlflow-autogluon](https://phylatech.com/mlflow-autogluon/)**
+**Documentation: [phylatech.github.io/mlflow-autogluon](https://phylatech.github.io/mlflow-autogluon/)**
 
 AutoGluon has no built-in MLflow flavor, and the MLflow maintainers have asked for this
 integration to live as a [community flavor](https://mlflow.org/docs/latest/ml/community-model-flavors/)

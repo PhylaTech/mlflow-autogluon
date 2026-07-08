@@ -1,6 +1,6 @@
 site_name: mlflow-autogluon
 site_description: MLflow community model flavor and autologging for AutoGluon
-site_url: https://phylatech.com/mlflow-autogluon/
+site_url: https://phylatech.github.io/mlflow-autogluon/
 repo_url: https://github.com/PhylaTech/mlflow-autogluon
 repo_name: PhylaTech/mlflow-autogluon
 
