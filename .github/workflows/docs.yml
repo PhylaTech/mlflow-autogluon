@@ -28,6 +28,8 @@ jobs:
           folder: site
           branch: gh-pages
           clean: true
-          # PR previews live under pr-preview/ and are managed by the
-          # docs-preview workflow; do not wipe them on main deploys
-          clean-exclude: pr-preview/
+          # pr-preview/ is managed by the docs-preview workflow and
+          # badges/ by the CI coverage job; do not wipe them on deploys
+          clean-exclude: |
+            pr-preview/
+            badges/
