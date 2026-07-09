@@ -788,7 +788,7 @@ user-created runs are reused, and a logging failure never breaks your training c
     <span class="n">log_leaderboard</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>        <span class="c1"># leaderboard CSV artifact + per-model metrics</span>
     <span class="n">log_fit_summary</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>       <span class="c1"># fit_summary() as a JSON artifact</span>
     <span class="n">registered_model_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># also register logged models under this name</span>
-    <span class="n">extra_tags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>             <span class="c1"># extra tags applied to autologged runs</span>
+    <span class="n">extra_tags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>             <span class="c1"># dict of extra tags, e.g. {&quot;team&quot;: &quot;ml-platform&quot;}</span>
     <span class="n">disable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>               <span class="c1"># turn the integration off</span>
     <span class="n">silent</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>                <span class="c1"># suppress autologging warnings</span>
 <span class="p">)</span>

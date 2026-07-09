@@ -993,11 +993,32 @@ autologging.</p>
     </table>
 
 
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="mlflow.exceptions.MlflowException">MlflowException</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If <code>extra_tags</code> is not a dictionary.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
             <details class="mkdocstrings-source">
               <summary>Source code in <code>mlflow_autogluon/autolog.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 46</span>
-<span class="normal"> 47</span>
-<span class="normal"> 48</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 48</span>
 <span class="normal"> 49</span>
 <span class="normal"> 50</span>
 <span class="normal"> 51</span>
@@ -1061,7 +1082,19 @@ autologging.</p>
 <span class="normal">109</span>
 <span class="normal">110</span>
 <span class="normal">111</span>
-<span class="normal">112</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@autologging_integration</span><span class="p">(</span><span class="n">FLAVOR_NAME</span><span class="p">)</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@autologging_integration</span><span class="p">(</span><span class="n">FLAVOR_NAME</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">autolog</span><span class="p">(</span>
     <span class="n">log_models</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">log_model_signatures</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -1113,7 +1146,17 @@ autologging.</p>
 <span class="sd">            untested AutoGluon versions.</span>
 <span class="sd">        silent: If ``True``, suppress all MLflow event logs and warnings from</span>
 <span class="sd">            autologging.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        MlflowException: If ``extra_tags`` is not a dictionary.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">extra_tags</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extra_tags</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">MlflowException</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Invalid `extra_tags` type: expecting a dictionary of &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;tag name to value, but got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">extra_tags</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">,</span>
+            <span class="n">INVALID_PARAMETER_VALUE</span><span class="p">,</span>
+        <span class="p">)</span>
+
     <span class="n">patched_any</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="k">for</span> <span class="n">module_name</span><span class="p">,</span> <span class="n">class_name</span> <span class="ow">in</span> <span class="n">_PREDICTOR_REGISTRY</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
         <span class="k">try</span><span class="p">:</span>
