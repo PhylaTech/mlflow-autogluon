@@ -26,3 +26,4 @@ AutogluonModels/
 .idea/
 .DS_Store
 site/
+.pixi/
