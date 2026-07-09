@@ -130,6 +130,17 @@ def test_autolog_timeseries(train_frame, tracking_uri, tmp_path):
         artifact_paths = [f.path for f in MlflowClient().list_artifacts(run.info.run_id)]
         assert "leaderboard.csv" in artifact_paths
 
+        # signature is inferred from the long-format frame and the forecast
+        signature = mlflow.models.get_model_info(f"runs:/{run.info.run_id}/model").signature
+        input_names = [col.name for col in signature.inputs.inputs]
+        assert {"item_id", "timestamp", "target"} <= set(input_names)
+        output_names = [col.name for col in signature.outputs.inputs]
+        assert "mean" in output_names
+
+        # the TimeSeriesDataFrame training data is attached as a dataset input
+        dataset_inputs = MlflowClient().get_run(run.info.run_id).inputs.dataset_inputs
+        assert len(dataset_inputs) == 1
+
         loaded = mlflow_autogluon.load_model(f"runs:/{run.info.run_id}/model")
         assert isinstance(loaded, TimeSeriesPredictor)
     finally:

@@ -57,6 +57,62 @@ def test_autolog_logs_loadable_model(autolog_run, test_data):
     pd.testing.assert_series_equal(loaded.predict(test_data), predictor.predict(test_data))
 
 
+def test_autolog_infers_model_signature(autolog_run):
+    _, run = autolog_run
+
+    signature = mlflow.models.get_model_info(f"runs:/{run.info.run_id}/model").signature
+    assert signature is not None
+    assert signature.inputs is not None
+    input_names = [col.name for col in signature.inputs.inputs]
+    assert "num_a" in input_names
+    assert LABEL not in input_names
+    # the predict_method inference param must survive signature inference
+    assert "predict_method" in [p.name for p in signature.params.params]
+
+
+def test_autolog_attaches_training_dataset(autolog_run):
+    _, run = autolog_run
+
+    dataset_inputs = MlflowClient().get_run(run.info.run_id).inputs.dataset_inputs
+    assert len(dataset_inputs) == 1
+    assert dataset_inputs[0].dataset.name == "training"
+
+
+def test_autolog_log_input_examples(train_data, tracking_uri, tmp_path):
+    mlflow_autogluon.autolog(log_input_examples=True)
+    try:
+        _fit_predictor(train_data, tmp_path / "predictor")
+        runs = mlflow.search_runs(output_format="list")
+        model = mlflow.models.Model.load(f"runs:/{runs[0].info.run_id}/model")
+        assert model.saved_input_example_info is not None
+    finally:
+        mlflow_autogluon.autolog(disable=True)
+
+
+def test_autolog_signatures_disabled(train_data, tracking_uri, tmp_path):
+    mlflow_autogluon.autolog(log_model_signatures=False)
+    try:
+        _fit_predictor(train_data, tmp_path / "predictor")
+        runs = mlflow.search_runs(output_format="list")
+        signature = mlflow.models.get_model_info(
+            f"runs:/{runs[0].info.run_id}/model"
+        ).signature
+        # only the default params schema remains
+        assert signature.inputs is None
+    finally:
+        mlflow_autogluon.autolog(disable=True)
+
+
+def test_autolog_datasets_disabled(train_data, tracking_uri, tmp_path):
+    mlflow_autogluon.autolog(log_models=False, log_datasets=False)
+    try:
+        _fit_predictor(train_data, tmp_path / "predictor")
+        runs = mlflow.search_runs(output_format="list")
+        assert MlflowClient().get_run(runs[0].info.run_id).inputs.dataset_inputs == []
+    finally:
+        mlflow_autogluon.autolog(disable=True)
+
+
 def test_autolog_respects_log_models_false(train_data, tracking_uri, tmp_path):
     mlflow_autogluon.autolog(log_models=False)
     try:

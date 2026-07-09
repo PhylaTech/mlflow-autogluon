@@ -81,5 +81,4 @@ them by hand.
 
 ## Roadmap
 
-- Model signature inference during autologging
 - ClearML integration (tracked separately)

@@ -46,6 +46,9 @@ _NON_PARAM_FIT_ARGS = {"self", "train_data", "tuning_data", "test_data", "kwargs
 @autologging_integration(FLAVOR_NAME)
 def autolog(
     log_models: bool = True,
+    log_model_signatures: bool = True,
+    log_input_examples: bool = False,
+    log_datasets: bool = True,
     log_leaderboard: bool = True,
     log_fit_summary: bool = False,
     registered_model_name: str | None = None,
@@ -71,6 +74,13 @@ def autolog(
 
     Args:
         log_models: If ``True``, log the fitted predictor as an MLflow model.
+        log_model_signatures: If ``True``, infer a model signature from a
+            sample of the training data and the predictor's output and attach
+            it to logged models.
+        log_input_examples: If ``True``, save a small sample of the training
+            features as the logged model's input example.
+        log_datasets: If ``True``, attach the training data to the run as an
+            MLflow dataset input.
         log_leaderboard: If ``True``, log the leaderboard as a CSV artifact
             and per-model metrics.
         log_fit_summary: If ``True``, log ``predictor.fit_summary()`` as a
@@ -107,7 +117,8 @@ def _patched_fit(original, self, *args, **kwargs):
     start_time = time.time()
     result = original(self, *args, **kwargs)
     fit_duration = time.time() - start_time
-    _try_log(_log_posttraining, self, fit_duration)
+    train_data = kwargs.get("train_data", args[0] if args else None)
+    _try_log(_log_posttraining, self, fit_duration, train_data)
     return result
 
 
@@ -189,7 +200,7 @@ def _get_leaderboard(self):
         return self.leaderboard(silent=True)
 
 
-def _log_posttraining(self, fit_duration):
+def _log_posttraining(self, fit_duration, train_data=None):
     mlflow.log_metric("fit_time_seconds", fit_duration)
 
     problem_type = getattr(self, "problem_type", None)
@@ -210,17 +221,77 @@ def _log_posttraining(self, fit_duration):
     ):
         _try_log(_log_fit_summary, self)
 
+    if get_autologging_config(FLAVOR_NAME, "log_datasets", True):
+        _try_log(_log_dataset, train_data)
+
     if get_autologging_config(FLAVOR_NAME, "log_models", True):
         registered_model_name = get_autologging_config(
             FLAVOR_NAME, "registered_model_name", None
         )
+        signature, input_example = _infer_signature_and_example(self, train_data)
         # name= resolves to the MLflow 3 convention when available and falls
         # back to artifact_path on MLflow 2.x, avoiding deprecation warnings.
         log_model(
             ag_model=self,
             name="model",
             registered_model_name=registered_model_name,
+            signature=signature,
+            input_example=input_example,
         )
+
+
+def _log_dataset(train_data):
+    """Attach the training data to the run as an MLflow dataset input."""
+    import pandas as pd
+
+    if not isinstance(train_data, pd.DataFrame):
+        # AutoGluon also accepts file paths; only DataFrames are logged
+        return
+    frame = train_data
+    if isinstance(frame.index, pd.MultiIndex):
+        # TimeSeriesDataFrame carries (item_id, timestamp) in the index
+        frame = pd.DataFrame(frame).reset_index()
+    dataset = mlflow.data.from_pandas(pd.DataFrame(frame), name="training")
+    mlflow.log_input(dataset, context="training")
+
+
+def _sample_features(self, train_data):
+    """A small feature-only sample of the training data for signatures."""
+    label = getattr(self, "label", None)
+    features = train_data
+    if label is not None and label in getattr(train_data, "columns", []):
+        features = train_data.drop(columns=[label])
+    return features.head(5)
+
+
+def _infer_signature_and_example(self, train_data):
+    """Best-effort signature and input example, never failing the fit call."""
+    import pandas as pd
+    from mlflow.models import infer_signature
+
+    want_signature = get_autologging_config(FLAVOR_NAME, "log_model_signatures", True)
+    want_example = get_autologging_config(FLAVOR_NAME, "log_input_examples", False)
+    if not (want_signature or want_example) or not isinstance(train_data, pd.DataFrame):
+        return None, None
+
+    signature = None
+    input_example = None
+    try:
+        if _model_type_of(self) == "timeseries":
+            # the pyfunc contract is long format: (item_id, timestamp) columns
+            sample = pd.DataFrame(train_data).reset_index()
+            predictions = pd.DataFrame(self.predict(train_data)).reset_index()
+        else:
+            sample = _sample_features(self, train_data)
+            predictions = self.predict(sample)
+        if want_signature:
+            signature = infer_signature(sample, predictions)
+        if want_example:
+            input_example = sample
+    except Exception as e:
+        if not get_autologging_config(FLAVOR_NAME, "silent", False):
+            _logger.warning("mlflow-autogluon signature inference failed: %s", e)
+    return signature, input_example
 
 
 def _log_leaderboard(self, best_model):
