@@ -493,17 +493,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#running-the-checks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Running the checks
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#documentation" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -582,17 +571,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#running-the-checks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Running the checks
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#documentation" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -649,25 +627,94 @@
 <p>Issues and pull requests are welcome at
 <a href="https://github.com/PhylaTech/mlflow-autogluon">PhylaTech/mlflow-autogluon</a>.</p>
 <h2 id="development-environment">Development environment</h2>
-<p>The repo ships an <code>environment.yml</code> for a conda/mamba based dev environment:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">pixi (recommended)</label><label for="__tabbed_1_2">conda / mamba</label><label for="__tabbed_1_3">pip</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p>The repo ships a <code>pixi.toml</code> with two environments: the <strong>default</strong>
+environment (tabular predictor plus test, lint, and docs tooling; fast to
+install) and the <strong>full</strong> environment (adds timeseries and multimodal for
+CI-parity coverage runs).</p>
+<div class="highlight"><pre><span></span><code>pixi<span class="w"> </span>install<span class="w">          </span><span class="c1"># default environment</span>
+pixi<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>full<span class="w">  </span><span class="c1"># everything, needed for coverage / test-all</span>
+</code></pre></div>
+<p>All common operations are pixi tasks:</p>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Environment</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pixi run test</code></td>
+<td>default</td>
+<td>tabular test suite</td>
+</tr>
+<tr>
+<td><code>pixi run lint</code></td>
+<td>default</td>
+<td><code>ruff check</code></td>
+</tr>
+<tr>
+<td><code>pixi run docs</code></td>
+<td>default</td>
+<td>live docs server (<code>mkdocs serve</code>)</td>
+</tr>
+<tr>
+<td><code>pixi run docs-build</code></td>
+<td>default</td>
+<td>strict docs build</td>
+</tr>
+<tr>
+<td><code>pixi run -e full test-all</code></td>
+<td>full</td>
+<td>complete test suite</td>
+</tr>
+<tr>
+<td><code>pixi run -e full test-timeseries</code></td>
+<td>full</td>
+<td>timeseries tests only</td>
+</tr>
+<tr>
+<td><code>pixi run -e full test-multimodal</code></td>
+<td>full</td>
+<td>multimodal tests only</td>
+</tr>
+<tr>
+<td><code>pixi run -e full coverage</code></td>
+<td>full</td>
+<td>CI-parity gate, 100 percent required</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="tabbed-block">
+<p>The repo also ships an <code>environment.yml</code> (includes all predictor extras):</p>
 <div class="highlight"><pre><span></span><code>mamba<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>environment.yml
 mamba<span class="w"> </span>run<span class="w"> </span>-n<span class="w"> </span>mlflow-autogluon<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
-</code></pre></div>
-<p>Plain virtualenv works too:</p>
-<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="o">[</span>dev<span class="o">]</span>
-</code></pre></div>
-<h2 id="running-the-checks">Running the checks</h2>
-<div class="highlight"><pre><span></span><code><span class="c1"># Tests (fast: the suite trains tiny DUMMY-model predictors)</span>
+
+<span class="c1"># Tests (fast: the suite trains tiny DUMMY-model predictors)</span>
 mamba<span class="w"> </span>run<span class="w"> </span>-n<span class="w"> </span>mlflow-autogluon<span class="w"> </span>pytest
 
-<span class="c1"># Coverage (CI enforces 90 percent)</span>
-mamba<span class="w"> </span>run<span class="w"> </span>-n<span class="w"> </span>mlflow-autogluon<span class="w"> </span>pytest<span class="w"> </span>--cov<span class="o">=</span>mlflow_autogluon<span class="w"> </span>--cov-fail-under<span class="o">=</span><span class="m">90</span>
+<span class="c1"># Coverage (CI enforces 100 percent with all predictor extras installed)</span>
+mamba<span class="w"> </span>run<span class="w"> </span>-n<span class="w"> </span>mlflow-autogluon<span class="w"> </span>pytest<span class="w"> </span>--cov<span class="o">=</span>mlflow_autogluon<span class="w"> </span>--cov-fail-under<span class="o">=</span><span class="m">100</span>
 
 <span class="c1"># Lint</span>
 mamba<span class="w"> </span>run<span class="w"> </span>-n<span class="w"> </span>mlflow-autogluon<span class="w"> </span>ruff<span class="w"> </span>check<span class="w"> </span>mlflow_autogluon<span class="w"> </span>tests
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="o">[</span>dev<span class="o">]</span>
+pytest
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>CI runs the suite on Python 3.10 to 3.12 against the latest MLflow, plus a job pinned
-to <code>mlflow&lt;3</code> to guard the oldest supported line.</p>
+to <code>mlflow&lt;3</code> to guard the oldest supported line and a coverage job with all
+predictor extras that enforces 100 percent.</p>
 <h2 id="documentation">Documentation</h2>
 <p>Docs are MkDocs Material, deployed to GitHub Pages on every push to <code>main</code>:</p>
 <div class="highlight"><pre><span></span><code>mamba<span class="w"> </span>run<span class="w"> </span>-n<span class="w"> </span>mlflow-autogluon<span class="w"> </span>mkdocs<span class="w"> </span>serve
