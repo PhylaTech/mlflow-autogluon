@@ -9,6 +9,12 @@ permissions:
   pull-requests: write
   actions: write
 
+# shared with the Docs workflow: everything that pushes to gh-pages
+# must be serialized or the pushes race and get rejected
+concurrency:
+  group: gh-pages
+  cancel-in-progress: false
+
 jobs:
   release-please:
     runs-on: ubuntu-latest
@@ -46,5 +52,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           version="${{ steps.release.outputs.tag_name }}"
-          mike deploy --push --update-aliases "${version#v}" latest
-          mike set-default --push latest
+          # retry with a fresh gh-pages in case another workflow pushed
+          # between our fetch and push
+          for attempt in 1 2 3; do
+            git fetch origin +gh-pages:gh-pages || true
+            if mike deploy --push --update-aliases "${version#v}" latest &&
+               mike set-default --push latest; then
+              break
+            fi
+            if [ "$attempt" = 3 ]; then exit 1; fi
+            sleep $((attempt * 15))
+          done
