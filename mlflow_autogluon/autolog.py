@@ -22,6 +22,8 @@ import time
 from typing import Any
 
 import mlflow
+from mlflow.exceptions import MlflowException
+from mlflow.protos.databricks_pb2 import INVALID_PARAMETER_VALUE
 from mlflow.utils.autologging_utils import (
     autologging_integration,
     get_autologging_config,
@@ -95,7 +97,17 @@ def autolog(
             untested AutoGluon versions.
         silent: If ``True``, suppress all MLflow event logs and warnings from
             autologging.
+
+    Raises:
+        MlflowException: If ``extra_tags`` is not a dictionary.
     """
+    if extra_tags is not None and not isinstance(extra_tags, dict):
+        raise MlflowException(
+            f"Invalid `extra_tags` type: expecting a dictionary of "
+            f"tag name to value, but got {type(extra_tags).__name__}.",
+            INVALID_PARAMETER_VALUE,
+        )
+
     patched_any = False
     for module_name, class_name in _PREDICTOR_REGISTRY.values():
         try:

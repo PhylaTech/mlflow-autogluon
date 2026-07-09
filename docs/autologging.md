@@ -17,7 +17,7 @@ mlflow_autogluon.autolog(
     log_leaderboard=True,        # leaderboard CSV artifact + per-model metrics
     log_fit_summary=False,       # fit_summary() as a JSON artifact
     registered_model_name=None,  # also register logged models under this name
-    extra_tags=None,             # extra tags applied to autologged runs
+    extra_tags=None,             # dict of extra tags, e.g. {"team": "ml-platform"}
     disable=False,               # turn the integration off
     silent=False,                # suppress autologging warnings
 )

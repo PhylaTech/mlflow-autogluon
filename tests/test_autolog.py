@@ -2,10 +2,17 @@ import mlflow
 import pandas as pd
 import pytest
 from autogluon.tabular import TabularPredictor
+from mlflow.exceptions import MlflowException
 from mlflow.tracking import MlflowClient
 
 import mlflow_autogluon
 from tests.conftest import FAST_HYPERPARAMETERS, LABEL
+
+
+@pytest.mark.parametrize("bad_tags", ["a string", ["a", "list"], 42])
+def test_autolog_rejects_non_dict_extra_tags(bad_tags):
+    with pytest.raises(MlflowException, match="Invalid `extra_tags` type"):
+        mlflow_autogluon.autolog(extra_tags=bad_tags)
 
 
 def _fit_predictor(train_data, path):
