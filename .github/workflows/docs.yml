@@ -8,9 +8,11 @@ on:
 permissions:
   contents: write
 
+# shared with the Release Please workflow: everything that pushes to
+# gh-pages must be serialized or the pushes race and get rejected
 concurrency:
-  group: docs-deploy
-  cancel-in-progress: true
+  group: gh-pages
+  cancel-in-progress: false
 
 jobs:
   deploy-dev:
@@ -29,4 +31,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          mike deploy --push dev
+          # retry with a fresh gh-pages in case another workflow pushed
+          # between our fetch and push
+          for attempt in 1 2 3; do
+            git fetch origin +gh-pages:gh-pages || true
+            mike deploy --push dev && break
+            if [ "$attempt" = 3 ]; then exit 1; fi
+            sleep $((attempt * 15))
+          done
