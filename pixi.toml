@@ -14,6 +14,7 @@ mlflow-autogluon = { path = ".", editable = true, extras = ["tabular", "test"] }
 ruff = ">=0.4"
 mkdocs-material = ">=9.5"
 mkdocstrings = { version = ">=0.25", extras = ["python"] }
+mike = ">=2.1"
 
 # autogluon.multimodal's dependency chain imports pkg_resources, which
 # newer setuptools no longer ships; pin on the conda side because the

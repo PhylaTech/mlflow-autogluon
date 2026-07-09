@@ -1,6 +1,15 @@
 # mlflow-autogluon
 
+[![PyPI](https://img.shields.io/pypi/v/mlflow-autogluon.svg)](https://pypi.org/project/mlflow-autogluon/)
+[![CI](https://github.com/PhylaTech/mlflow-autogluon/actions/workflows/ci.yml/badge.svg)](https://github.com/PhylaTech/mlflow-autogluon/actions/workflows/ci.yml)
+[![Coverage](https://phylatech.github.io/mlflow-autogluon/badges/coverage.svg)](https://github.com/PhylaTech/mlflow-autogluon/actions/workflows/ci.yml)
+
 MLflow community model flavor and autologging for [AutoGluon](https://auto.gluon.ai) predictors.
+
+!!! info "Versioned documentation"
+    Use the version selector in the header to switch between documentation for
+    released versions (each matches the package version on PyPI) and the `dev`
+    docs that track the main branch.
 
 AutoGluon has no built-in MLflow flavor, and the MLflow maintainers have asked for this
 integration to live as a

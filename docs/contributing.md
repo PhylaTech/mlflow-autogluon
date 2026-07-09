@@ -61,11 +61,16 @@ predictor extras that enforces 100 percent.
 
 ## Documentation
 
-Docs are MkDocs Material, deployed to GitHub Pages on every push to `main`:
+Docs are MkDocs Material, versioned with [mike](https://github.com/jimporter/mike)
+and hosted on GitHub Pages:
 
-```bash
-mamba run -n mlflow-autogluon mkdocs serve
-```
+- every push to `main` deploys the `dev` docs version
+- every release deploys a version matching the PyPI release (e.g. `0.2.0`) and
+  moves the `latest` alias, which is the site default, so released docs always
+  match the released code
+
+Preview locally with `mkdocs serve` (or `pixi run docs`); the version selector
+only appears on the deployed site.
 
 ## Commit messages and releases
 
