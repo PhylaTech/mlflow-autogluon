@@ -134,3 +134,10 @@ def test_autolog_timeseries(train_frame, tracking_uri, tmp_path):
         assert isinstance(loaded, TimeSeriesPredictor)
     finally:
         mlflow_autogluon.autolog(disable=True)
+
+
+def test_to_timeseries_dataframe_passthrough(train_frame):
+    from mlflow_autogluon.flavor import _to_timeseries_dataframe
+
+    ts_frame = TimeSeriesDataFrame.from_data_frame(train_frame)
+    assert _to_timeseries_dataframe(ts_frame) is ts_frame

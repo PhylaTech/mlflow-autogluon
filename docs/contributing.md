@@ -24,8 +24,8 @@ pip install -e .[dev]
 # Tests (fast: the suite trains tiny DUMMY-model predictors)
 mamba run -n mlflow-autogluon pytest
 
-# Coverage (CI enforces 90 percent)
-mamba run -n mlflow-autogluon pytest --cov=mlflow_autogluon --cov-fail-under=90
+# Coverage (CI enforces 100 percent with all predictor extras installed)
+mamba run -n mlflow-autogluon pytest --cov=mlflow_autogluon --cov-fail-under=100
 
 # Lint
 mamba run -n mlflow-autogluon ruff check mlflow_autogluon tests

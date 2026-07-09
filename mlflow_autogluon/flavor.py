@@ -403,8 +403,10 @@ def _load_pyfunc(path):
         data_subpath = flavor_conf.get("data", _MODEL_DATA_SUBPATH)
         model_type = flavor_conf.get("model_type", _MODEL_TYPE_TABULAR)
         ag_model_path = os.path.join(path, data_subpath)
-    except MlflowException:
+    except (MlflowException, OSError):
         # ``path`` already points at the predictor directory (older layouts).
+        # MLflow 3.x raises MlflowException for a missing MLmodel file,
+        # MLflow 2.x surfaces the underlying OSError.
         ag_model_path = path
         model_type = _MODEL_TYPE_TABULAR
     return _AutoGluonModelWrapper(

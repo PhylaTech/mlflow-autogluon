@@ -36,7 +36,36 @@ jobs:
       - run: pip install -e .[tabular,test]
       - if: matrix.mlflow-version != ''
         run: pip install "${{ matrix.mlflow-version }}"
-      - run: pytest --cov=mlflow_autogluon --cov-report=term-missing --cov-fail-under=85
+      - run: pytest
+
+  coverage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      # all predictor extras so every registry branch is reachable;
+      # setuptools<81 still ships pkg_resources for autogluon.multimodal
+      - run: pip install -e .[tabular,timeseries,multimodal,test] "setuptools<81" coverage-badge
+      - run: pytest --cov=mlflow_autogluon --cov-report=term-missing --cov-fail-under=100
+        timeout-minutes: 30
+      - name: Generate coverage badge
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          mkdir badge-out
+          coverage-badge -o badge-out/coverage.svg
+      - name: Publish badge to gh-pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: badge-out
+          target-folder: badges
+          branch: gh-pages
+          clean: false
 
   test-timeseries:
     runs-on: ubuntu-latest
