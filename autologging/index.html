@@ -442,6 +442,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#signatures-input-examples-and-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Signatures, input examples, and datasets
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -689,6 +700,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#signatures-input-examples-and-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Signatures, input examples, and datasets
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -756,6 +778,9 @@ user-created runs are reused, and a logging failure never breaks your training c
 <h2 id="options">Options</h2>
 <div class="highlight"><pre><span></span><code><span class="n">mlflow_autogluon</span><span class="o">.</span><span class="n">autolog</span><span class="p">(</span>
     <span class="n">log_models</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>             <span class="c1"># log the fitted predictor as an MLflow model</span>
+    <span class="n">log_model_signatures</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>   <span class="c1"># infer a signature from training data + predictions</span>
+    <span class="n">log_input_examples</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>    <span class="c1"># save a training-feature sample with the model</span>
+    <span class="n">log_datasets</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>           <span class="c1"># attach the training data as an MLflow dataset input</span>
     <span class="n">log_leaderboard</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>        <span class="c1"># leaderboard CSV artifact + per-model metrics</span>
     <span class="n">log_fit_summary</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>       <span class="c1"># fit_summary() as a JSON artifact</span>
     <span class="n">registered_model_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># also register logged models under this name</span>
@@ -799,6 +824,22 @@ artifact are skipped for it.</p>
 <li><code>model/</code>: the fitted predictor logged with the <code>autogluon</code> flavor
   (disable with <code>log_models=False</code>)</li>
 </ul>
+<h3 id="signatures-input-examples-and-datasets">Signatures, input examples, and datasets</h3>
+<p>Matching MLflow's built-in autologging conventions:</p>
+<ul>
+<li><strong>Model signature</strong> (<code>log_model_signatures</code>, default on): inferred from a small
+  sample of the training features and the predictor's output, so logged models
+  enforce their input schema at serving time. For timeseries predictors the
+  signature reflects the long-format <code>(item_id, timestamp, target)</code> contract and
+  the forecast columns. The <code>predict_method</code> inference param is always preserved.</li>
+<li><strong>Input example</strong> (<code>log_input_examples</code>, default off): saves the sampled
+  training features alongside the model.</li>
+<li><strong>Dataset lineage</strong> (<code>log_datasets</code>, default on): the training DataFrame is
+  attached to the run as an MLflow dataset input (visible in the run's
+  "Datasets used" panel). File-path training inputs are skipped.</li>
+</ul>
+<p>All of this is best effort: a failure in signature inference or dataset logging
+is downgraded to a warning and never interrupts training.</p>
 <h2 id="registering-models-automatically">Registering models automatically</h2>
 <div class="highlight"><pre><span></span><code><span class="n">mlflow_autogluon</span><span class="o">.</span><span class="n">autolog</span><span class="p">(</span><span class="n">registered_model_name</span><span class="o">=</span><span class="s2">&quot;churn-classifier&quot;</span><span class="p">)</span>
 </code></pre></div>

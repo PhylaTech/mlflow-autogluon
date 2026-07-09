@@ -750,7 +750,7 @@ call <code>mlflow_autogluon.autolog()</code> explicitly before fitting.</p>
 
 
 <h3 id="mlflow_autogluon.autolog.autolog" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">autolog</span><span class="p">(</span><span class="n">log_models</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">log_leaderboard</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">log_fit_summary</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">registered_model_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">extra_tags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">exclusive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">disable_for_unsupported_versions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">silent</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">autolog</span><span class="p">(</span><span class="n">log_models</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">log_model_signatures</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">log_input_examples</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">log_datasets</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">log_leaderboard</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">log_fit_summary</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">registered_model_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">extra_tags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">exclusive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">disable_for_unsupported_versions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">silent</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 </h3>
 
@@ -793,6 +793,58 @@ run (a run is created automatically when none is active):</p>
             <td>
               <div class="doc-md-description">
                 <p>If <code>True</code>, log the fitted predictor as an MLflow model.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>log_model_signatures</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If <code>True</code>, infer a model signature from a
+sample of the training data and the predictor's output and attach
+it to logged models.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>log_input_examples</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If <code>True</code>, save a small sample of the training
+features as the logged model's input example.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>log_datasets</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If <code>True</code>, attach the training data to the run as an
+MLflow dataset input.</p>
               </div>
             </td>
             <td>
@@ -995,9 +1047,22 @@ autologging.</p>
 <span class="normal"> 99</span>
 <span class="normal">100</span>
 <span class="normal">101</span>
-<span class="normal">102</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@autologging_integration</span><span class="p">(</span><span class="n">FLAVOR_NAME</span><span class="p">)</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@autologging_integration</span><span class="p">(</span><span class="n">FLAVOR_NAME</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">autolog</span><span class="p">(</span>
     <span class="n">log_models</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">log_model_signatures</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">log_input_examples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">log_datasets</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">log_leaderboard</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">log_fit_summary</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">registered_model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1023,6 +1088,13 @@ autologging.</p>
 
 <span class="sd">    Args:</span>
 <span class="sd">        log_models: If ``True``, log the fitted predictor as an MLflow model.</span>
+<span class="sd">        log_model_signatures: If ``True``, infer a model signature from a</span>
+<span class="sd">            sample of the training data and the predictor&#39;s output and attach</span>
+<span class="sd">            it to logged models.</span>
+<span class="sd">        log_input_examples: If ``True``, save a small sample of the training</span>
+<span class="sd">            features as the logged model&#39;s input example.</span>
+<span class="sd">        log_datasets: If ``True``, attach the training data to the run as an</span>
+<span class="sd">            MLflow dataset input.</span>
 <span class="sd">        log_leaderboard: If ``True``, log the leaderboard as a CSV artifact</span>
 <span class="sd">            and per-model metrics.</span>
 <span class="sd">        log_fit_summary: If ``True``, log ``predictor.fit_summary()`` as a</span>
