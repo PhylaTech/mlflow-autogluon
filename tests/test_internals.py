@@ -249,3 +249,39 @@ def test_load_pyfunc_directly_on_predictor_directory(fitted_predictor, test_data
     # older layouts pointed pyfunc data at the predictor directory itself
     wrapper = flavor._load_pyfunc(str(model_path / "ag_model"))
     assert len(wrapper.predict(test_data)) == len(test_data)
+
+
+def test_log_dataset_ignores_non_dataframe_inputs():
+    from mlflow_autogluon.autolog import _log_dataset
+
+    _log_dataset("s3://bucket/train.csv")  # must not raise or need a run
+
+
+def test_infer_signature_skips_non_dataframe_train_data():
+    from mlflow_autogluon.autolog import _infer_signature_and_example
+
+    assert _infer_signature_and_example(object(), None) == (None, None)
+
+
+def test_infer_signature_swallows_prediction_errors():
+    import pandas as pd
+
+    from mlflow_autogluon.autolog import _infer_signature_and_example
+
+    # an object of unknown type makes _model_type_of raise inside the guard
+    result = _infer_signature_and_example(object(), pd.DataFrame({"a": [1]}))
+    assert result == (None, None)
+
+
+def test_sample_features_without_label_column():
+    import pandas as pd
+
+    from mlflow_autogluon.autolog import _sample_features
+
+    class Unlabeled:
+        label = None
+
+    frame = pd.DataFrame({"a": range(10)})
+    sample = _sample_features(Unlabeled(), frame)
+    assert list(sample.columns) == ["a"]
+    assert len(sample) == 5

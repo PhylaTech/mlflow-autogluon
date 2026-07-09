@@ -9,7 +9,9 @@
 
 MLflow community model flavor and autologging for [AutoGluon](https://auto.gluon.ai) predictors.
 
-**Documentation: [phylatech.github.io/mlflow-autogluon](https://phylatech.github.io/mlflow-autogluon/)**
+> **📖 Documentation:** this README is a quick overview; guides, the full API
+> reference, and serving recipes live at
+> **[phylatech.github.io/mlflow-autogluon](https://phylatech.github.io/mlflow-autogluon/)**.
 
 AutoGluon has no built-in MLflow flavor, and the MLflow maintainers have asked for this
 integration to live as a [community flavor](https://mlflow.org/docs/latest/ml/community-model-flavors/)
@@ -29,9 +31,16 @@ This package provides that integration:
 
 ## Installation
 
+Install with the extra matching the predictor type you use:
+
 ```bash
-pip install mlflow-autogluon[tabular]
+pip install mlflow-autogluon[tabular]      # TabularPredictor
+pip install mlflow-autogluon[timeseries]   # TimeSeriesPredictor
+pip install mlflow-autogluon[multimodal]   # MultiModalPredictor
 ```
+
+Extras can be combined (`mlflow-autogluon[tabular,timeseries]`). If AutoGluon is
+already installed, plain `pip install mlflow-autogluon` is enough.
 
 ## Autologging quickstart
 
@@ -52,6 +61,7 @@ That single `autolog()` call gives you, per `fit`:
 | Metrics | `best_model_score_val`, `fit_time_seconds`, per-model `score_val_*` / `fit_time_*` |
 | Tags | `estimator_name`, `autogluon_version`, `best_model`, `problem_type` |
 | Artifacts | `leaderboard.csv`, optional `fit_summary.json`, the fitted model |
+| Extras | inferred model signature, training data attached as an MLflow dataset, optional input example |
 
 Because this is a community flavor, `mlflow.autolog()` does not enable it automatically;
 call `mlflow_autogluon.autolog()` explicitly. Options:
@@ -107,7 +117,6 @@ for a complete runnable walkthrough on a real dataset.
 
 ## Roadmap
 
-- Model signature inference during autologging
 - ClearML integration (tracked separately)
 
 ## Development
