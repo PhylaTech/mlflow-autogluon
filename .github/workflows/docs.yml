@@ -13,23 +13,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  deploy-dev:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
       - run: pip install -e .[docs]
       - run: mkdocs build --strict
-      - uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: site
-          branch: gh-pages
-          clean: true
-          # pr-preview/ is managed by the docs-preview workflow and
-          # badges/ by the CI coverage job; do not wipe them on deploys
-          clean-exclude: |
-            pr-preview/
-            badges/
+      - name: Deploy dev docs version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          mike deploy --push dev

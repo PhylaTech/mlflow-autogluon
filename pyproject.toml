@@ -46,6 +46,7 @@ test = [
 docs = [
     "mkdocs-material>=9.5",
     "mkdocstrings[python]>=0.25",
+    "mike>=2.1",
 ]
 dev = [
     "mlflow-autogluon[tabular,test,docs]",

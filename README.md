@@ -139,7 +139,7 @@ mamba run -n mlflow-autogluon pip install -e .
 mamba run -n mlflow-autogluon pytest
 ```
 
-See the [contributing guide](https://phylatech.github.io/mlflow-autogluon/contributing/)
+See the [contributing guide](https://phylatech.github.io/mlflow-autogluon/latest/contributing/)
 for the full task list and release process.
 
 ## License

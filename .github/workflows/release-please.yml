@@ -25,3 +25,26 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run publish-pypi.yml --repo ${{ github.repository }} --ref ${{ steps.release.outputs.tag_name }}
+
+      # publish the versioned documentation for this release and point
+      # the "latest" alias (the site default) at it
+      - if: ${{ steps.release.outputs.release_created }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.release.outputs.tag_name }}
+          fetch-depth: 0
+      - if: ${{ steps.release.outputs.release_created }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - if: ${{ steps.release.outputs.release_created }}
+        run: pip install -e .[docs]
+      - if: ${{ steps.release.outputs.release_created }}
+        name: Deploy versioned docs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          version="${{ steps.release.outputs.tag_name }}"
+          mike deploy --push --update-aliases "${version#v}" latest
+          mike set-default --push latest
