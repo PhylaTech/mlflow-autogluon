@@ -5,34 +5,59 @@ Issues and pull requests are welcome at
 
 ## Development environment
 
-The repo ships an `environment.yml` for a conda/mamba based dev environment:
+=== "pixi (recommended)"
 
-```bash
-mamba env create -f environment.yml
-mamba run -n mlflow-autogluon pip install -e .
-```
+    The repo ships a `pixi.toml` with two environments: the **default**
+    environment (tabular predictor plus test, lint, and docs tooling; fast to
+    install) and the **full** environment (adds timeseries and multimodal for
+    CI-parity coverage runs).
 
-Plain virtualenv works too:
+    ```bash
+    pixi install          # default environment
+    pixi install -e full  # everything, needed for coverage / test-all
+    ```
 
-```bash
-pip install -e .[dev]
-```
+    All common operations are pixi tasks:
 
-## Running the checks
+    | Task | Environment | What it does |
+    | --- | --- | --- |
+    | `pixi run test` | default | tabular test suite |
+    | `pixi run lint` | default | `ruff check` |
+    | `pixi run docs` | default | live docs server (`mkdocs serve`) |
+    | `pixi run docs-build` | default | strict docs build |
+    | `pixi run -e full test-all` | full | complete test suite |
+    | `pixi run -e full test-timeseries` | full | timeseries tests only |
+    | `pixi run -e full test-multimodal` | full | multimodal tests only |
+    | `pixi run -e full coverage` | full | CI-parity gate, 100 percent required |
 
-```bash
-# Tests (fast: the suite trains tiny DUMMY-model predictors)
-mamba run -n mlflow-autogluon pytest
+=== "conda / mamba"
 
-# Coverage (CI enforces 100 percent with all predictor extras installed)
-mamba run -n mlflow-autogluon pytest --cov=mlflow_autogluon --cov-fail-under=100
+    The repo also ships an `environment.yml` (includes all predictor extras):
 
-# Lint
-mamba run -n mlflow-autogluon ruff check mlflow_autogluon tests
-```
+    ```bash
+    mamba env create -f environment.yml
+    mamba run -n mlflow-autogluon pip install -e .
+
+    # Tests (fast: the suite trains tiny DUMMY-model predictors)
+    mamba run -n mlflow-autogluon pytest
+
+    # Coverage (CI enforces 100 percent with all predictor extras installed)
+    mamba run -n mlflow-autogluon pytest --cov=mlflow_autogluon --cov-fail-under=100
+
+    # Lint
+    mamba run -n mlflow-autogluon ruff check mlflow_autogluon tests
+    ```
+
+=== "pip"
+
+    ```bash
+    pip install -e .[dev]
+    pytest
+    ```
 
 CI runs the suite on Python 3.10 to 3.12 against the latest MLflow, plus a job pinned
-to `mlflow<3` to guard the oldest supported line.
+to `mlflow<3` to guard the oldest supported line and a coverage job with all
+predictor extras that enforces 100 percent.
 
 ## Documentation
 

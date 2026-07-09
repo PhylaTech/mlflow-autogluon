@@ -102,8 +102,8 @@ mlflow models serve -m "models:/<name>/<version>" -p 5001
 - AutoGluon >= 1.1: `TabularPredictor` (`[tabular]` extra), `TimeSeriesPredictor`
   (`[timeseries]`), and `MultiModalPredictor` (`[multimodal]`)
 
-See [examples/autolog_quickstart.py](examples/autolog_quickstart.py) for a complete
-runnable walkthrough on a real dataset.
+See [examples/autolog_quickstart.py](https://github.com/PhylaTech/mlflow-autogluon/blob/main/examples/autolog_quickstart.py)
+for a complete runnable walkthrough on a real dataset.
 
 ## Roadmap
 
@@ -112,7 +112,17 @@ runnable walkthrough on a real dataset.
 
 ## Development
 
-The repo ships an `environment.yml` for a conda/mamba based dev environment:
+With [pixi](https://pixi.sh) (recommended):
+
+```bash
+pixi install
+pixi run test           # tabular test suite
+pixi run lint           # ruff
+pixi run docs           # live documentation server
+pixi run -e full coverage   # full suite with the 100 percent gate
+```
+
+Or with conda/mamba via the shipped `environment.yml`:
 
 ```bash
 mamba env create -f environment.yml
@@ -120,6 +130,9 @@ mamba run -n mlflow-autogluon pip install -e .
 mamba run -n mlflow-autogluon pytest
 ```
 
+See the [contributing guide](https://phylatech.github.io/mlflow-autogluon/contributing/)
+for the full task list and release process.
+
 ## License
 
-Apache License 2.0. See [LICENSE](LICENSE).
+Apache License 2.0. See [LICENSE](https://github.com/PhylaTech/mlflow-autogluon/blob/main/LICENSE).

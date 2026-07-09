@@ -1,0 +1,42 @@
+[workspace]
+name = "mlflow-autogluon"
+channels = ["conda-forge"]
+platforms = ["osx-arm64", "linux-64"]
+
+[dependencies]
+python = "3.11.*"
+pip = "*"
+
+# default environment: tabular predictor + test/lint/docs tooling.
+# Fast to install; use the "full" environment for timeseries/multimodal.
+[pypi-dependencies]
+mlflow-autogluon = { path = ".", editable = true, extras = ["tabular", "test"] }
+ruff = ">=0.4"
+mkdocs-material = ">=9.5"
+mkdocstrings = { version = ">=0.25", extras = ["python"] }
+
+# autogluon.multimodal's dependency chain imports pkg_resources, which
+# newer setuptools no longer ships; pin on the conda side because the
+# conda solve owns the setuptools version
+[feature.full.dependencies]
+setuptools = "<81"
+
+[feature.full.pypi-dependencies]
+autogluon-timeseries = ">=1.1"
+autogluon-multimodal = ">=1.1"
+
+[environments]
+full = ["full"]
+
+[tasks]
+test = "pytest --ignore=tests/test_timeseries.py --ignore=tests/test_multimodal.py"
+lint = "ruff check mlflow_autogluon tests"
+docs = "mkdocs serve"
+docs-build = "mkdocs build --strict"
+
+[feature.full.tasks]
+test-all = "pytest"
+test-timeseries = "pytest tests/test_timeseries.py"
+test-multimodal = "pytest tests/test_multimodal.py"
+# CI-parity gate: all predictor extras installed, 100 percent required
+coverage = "pytest --cov=mlflow_autogluon --cov-report=term-missing --cov-fail-under=100"
