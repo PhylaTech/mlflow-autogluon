@@ -4,7 +4,7 @@
 [![Coverage](https://phylatech.github.io/mlflow-autogluon/badges/coverage.svg)](https://github.com/PhylaTech/mlflow-autogluon/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/mlflow-autogluon.svg)](https://pypi.org/project/mlflow-autogluon/)
 [![Docs](https://github.com/PhylaTech/mlflow-autogluon/actions/workflows/docs.yml/badge.svg)](https://phylatech.github.io/mlflow-autogluon/)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/PhylaTech/mlflow-autogluon/blob/main/LICENSE)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://github.com/PhylaTech/mlflow-autogluon)
 
 MLflow community model flavor and autologging for [AutoGluon](https://auto.gluon.ai) predictors.
