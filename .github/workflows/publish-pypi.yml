@@ -3,6 +3,9 @@ name: Publish to PyPI
 on:
   release:
     types: [published]
+  # dispatched by the Release Please workflow: releases created with the
+  # built-in GITHUB_TOKEN do not emit workflow-triggering events
+  workflow_dispatch:
 
 jobs:
   build:
