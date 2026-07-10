@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/PhylaTech/mlflow-autogluon/compare/v0.2.0...v0.2.1) (2026-07-10)
+
+
+### Bug Fixes
+
+* reject non-dict extra_tags in autolog with a clear error ([#14](https://github.com/PhylaTech/mlflow-autogluon/issues/14)) ([f405d2b](https://github.com/PhylaTech/mlflow-autogluon/commit/f405d2bbd8ce9339c0b57c94c4f946df38ef5529))
+
 ## [0.2.0](https://github.com/PhylaTech/mlflow-autogluon/compare/v0.1.1...v0.2.0) (2026-07-09)
 
 
