@@ -20,6 +20,8 @@ htmlcov/
 mlruns/
 mlartifacts/
 AutogluonModels/
+mlflow.db
+*.db
 
 # Editors / OS
 .vscode/
